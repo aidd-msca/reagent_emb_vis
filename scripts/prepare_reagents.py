@@ -1,10 +1,8 @@
-from pathlib import Path
 from argparse import ArgumentParser, Namespace
-
 from multiprocessing import cpu_count
+from pathlib import Path
 
 import pandas as pd
-
 from rdkit import RDLogger
 
 import preprocessing.utils as ut
@@ -50,18 +48,24 @@ def report_reagent_statistics(reagent_occurrences: dict[str, int], minimum_repea
     frequent_reagents = {k: v for k, v in reagent_occurrences.items() if v >= minimum_repeats}
     reagents_encountered_once = {k for k, v in reagent_occurrences.items() if v == 1}
     print("Unique reagents: %d" % len(reagent_occurrences))
-    print("Reagents occurring more than %d times: %d (%.3f%%)" % (minimum_repeats,
-                                                                  len(frequent_reagents),
-                                                                  len(frequent_reagents) * 100 / len(
-                                                                      reagent_occurrences)))
-    print("Reagents encountered only once: %d (%.3f%%)" % (len(reagents_encountered_once),
-                                                           len(reagents_encountered_once) * 100 / len(
-                                                               reagent_occurrences)))
+    print(
+        "Reagents occurring more than %d times: %d (%.3f%%)"
+        % (
+            minimum_repeats,
+            len(frequent_reagents),
+            len(frequent_reagents) * 100 / len(reagent_occurrences),
+        )
+    )
+    print(
+        "Reagents encountered only once: %d (%.3f%%)"
+        % (
+            len(reagents_encountered_once),
+            len(reagents_encountered_once) * 100 / len(reagent_occurrences),
+        )
+    )
 
 
-def standardize_reagents(smi: str,
-                         replacement_dict: dict[str, list[str]],
-                         separator: str) -> str:
+def standardize_reagents(smi: str, replacement_dict: dict[str, list[str]], separator: str) -> str:
     updated_smiles = []
     for m in smi.split(separator):
         if m in replacement_dict:
@@ -71,16 +75,17 @@ def standardize_reagents(smi: str,
     return separator.join(updated_smiles)
 
 
-def remove_certain_reagents(smi: str,
-                            species_to_remove: set[str],
-                            separator: str) -> str:
+def remove_certain_reagents(smi: str, species_to_remove: set[str], separator: str) -> str:
     return separator.join([m for m in smi.split(separator) if m not in species_to_remove])
 
 
-def remove_bound_water(smi: str,
-                       separator: str) -> str:
+def remove_bound_water(smi: str, separator: str) -> str:
     return separator.join(
-        [".".join([i for i in m.split(".") if i != "O"]) if m != "O" else m for m in smi.split(separator)])
+        [
+            ".".join([i for i in m.split(".") if i != "O"]) if m != "O" else m
+            for m in smi.split(separator)
+        ]
+    )
 
 
 def main(args: Namespace) -> None:
@@ -91,19 +96,20 @@ def main(args: Namespace) -> None:
     """
     input_data = Path(args.input_data)
     print("Reading reactions from %s" % input_data)
-    reactions: pd.Series = pd.read_csv(input_data,
-                                       sep=args.csv_separator,
-                                       skiprows=args.skiprows,
-                                       usecols=[args.source_column])[args.source_column]
+    reactions: pd.Series = pd.read_csv(
+        input_data, sep=args.csv_separator, skiprows=args.skiprows, usecols=[args.source_column]
+    )[args.source_column]
     print("Number of reactions: %d" % reactions.shape[0])
 
     role_master = EnhancedReactionRoleAssignment(
         role_assignment_mode=args.reagents,
         canonicalization_mode=args.canonicalization,
-        grouping_mode=args.fragment_grouping
+        grouping_mode=args.fragment_grouping,
     )
 
-    standardized_reactions = ut.parallelize_on_rows(reactions, role_master.run, args.n_jobs, use_tqdm=args.verbose)
+    standardized_reactions = ut.parallelize_on_rows(
+        reactions, role_master.run, args.n_jobs, use_tqdm=args.verbose
+    )
 
     # Dropping bad reactions
 
@@ -121,7 +127,9 @@ def main(args: Namespace) -> None:
     standardized_reactions = standardized_reactions[~reactions_too_long]
 
     reactions_trivial = standardized_reactions.apply(is_trivial_reaction)
-    print(f"Removing reactions where product appears among reactants or reagents: {reactions_trivial.sum()}")
+    print(
+        f"Removing reactions where product appears among reactants or reagents: {reactions_trivial.sum()}"
+    )
     standardized_reactions = standardized_reactions[~reactions_trivial]
     if standardized_reactions.empty:
         return print("All the reactions were removed :(")
@@ -144,17 +152,22 @@ def main(args: Namespace) -> None:
 
     print("Standardizing reagents")
     reagents = reagents.apply(
-        lambda x: standardize_reagents(x, replacement_dict=REAGENT_STANDARD_REPLACEMENT, separator=";"))
+        lambda x: standardize_reagents(
+            x, replacement_dict=REAGENT_STANDARD_REPLACEMENT, separator=";"
+        )
+    )
 
     # Drop duplicate molecules from reagents
-    reagents = reagents.apply(lambda x: ";".join(set(x.split(';'))))
+    reagents = reagents.apply(lambda x: ";".join(set(x.split(";"))))
 
     # Drop molecules that rarely occur in reagents we ended up with after organizing them
     reagent_occurrence_counter = ut.get_reagent_statistics(reagents, separator=";")
     print("In organized reagents:")
     report_reagent_statistics(reagent_occurrence_counter, args.min_reagent_occurrences)
     print("Removing rare reagents")
-    rare_reagents = {k for k, v in reagent_occurrence_counter.items() if v < args.min_reagent_occurrences}
+    rare_reagents = {
+        k for k, v in reagent_occurrence_counter.items() if v < args.min_reagent_occurrences
+    }
 
     print("Removing uncharged reagent species")
     charged_reagent_species = {k for k in reagent_occurrence_counter if ut.smi_charge(k) != 0}
@@ -177,7 +190,9 @@ def main(args: Namespace) -> None:
     save_path.mkdir(parents=True, exist_ok=True)
 
     reactions_final = reactants + ">>" + products
-    save_path_reactions = (save_path / f"transformations-{reactions_final.shape[0]}").with_suffix(".txt")
+    save_path_reactions = (save_path / f"transformations-{reactions_final.shape[0]}").with_suffix(
+        ".txt"
+    )
     reactions_final.to_csv(
         save_path_reactions,
         index=False,
@@ -193,39 +208,85 @@ def main(args: Namespace) -> None:
     print("Reagents saved in %s" % save_path_reagents)
 
 
-if __name__ == '__main__':
-    RDLogger.DisableLog('rdApp.*')
+if __name__ == "__main__":
+    RDLogger.DisableLog("rdApp.*")
 
     parser = ArgumentParser()
-    parser.add_argument("--input_data", "-i", type=str, required=True,
-                        help="Path to the raw data (.csv) that needs preprocessing.")
-    parser.add_argument("--output_dir", "-o", type=str, default="", help="Name of the directory with tokenized files.")
-    parser.add_argument("--csv_separator", type=str, default="\t",
-                        help="Separator in the input .csv file.")
-    parser.add_argument("--skiprows", type=int, default=0,
-                        help="How many rows to skip from the beginning of the file. "
-                             "Useful in case the file starts with comments.")
-    parser.add_argument("--source_column", "-c", type=str,
-                        help="Name of the column in the input that needs preprocessing.",
-                        default="ReactionSmiles")
-    parser.add_argument("--reagents", type=str, required=True, choices=["aam", "rdkit", "mixed"],
-                        help="The way of deciding which molecules in a reaction are reagents. "
-                             "Possible choices: aam, rdkit. The first relies on atom mapping, "
-                             "the second on a fingerprint-based technique from Schneider et al. 2016")
-    parser.add_argument("--fragment_grouping", type=str, default=None, choices=["cxsmiles", "heuristic"],
-                        help="How to do fragment grouping in reactions. Options: cxsmiles, heuristic. "
-                             "If not provided, no reagent grouping will be used")
-    parser.add_argument("--canonicalization", type=str, default=None, choices=["keep_aam", "remove_aam"],
-                        help="Specifies the way of reaction canonicalization - with atom mapping or without it."
-                             "Atom mapping might be necessary for some reaction encoders. "
-                             "It is recommended to use 'remove_aam' together when --reagents=rdkit. "
-                             "If not specified, reactions are not canonicalized.")
-    parser.add_argument("--n_jobs", type=int, default=cpu_count(),
-                        help="Number of processes to use in parallelized functions.")
-    parser.add_argument("--verbose", action="store_true",
-                        help="Whether to show progress bar of reagent preprocessing.")
-    parser.add_argument("--min_reagent_occurrences", type=int, default=None,
-                        help="If not None, all reagent with number of occurrences less than this "
-                             "number will be removed.")
+    parser.add_argument(
+        "--input_data",
+        "-i",
+        type=str,
+        required=True,
+        help="Path to the raw data (.csv) that needs preprocessing.",
+    )
+    parser.add_argument(
+        "--output_dir",
+        "-o",
+        type=str,
+        default="",
+        help="Name of the directory with tokenized files.",
+    )
+    parser.add_argument(
+        "--csv_separator", type=str, default="\t", help="Separator in the input .csv file."
+    )
+    parser.add_argument(
+        "--skiprows",
+        type=int,
+        default=0,
+        help="How many rows to skip from the beginning of the file. "
+        "Useful in case the file starts with comments.",
+    )
+    parser.add_argument(
+        "--source_column",
+        "-c",
+        type=str,
+        help="Name of the column in the input that needs preprocessing.",
+        default="ReactionSmiles",
+    )
+    parser.add_argument(
+        "--reagents",
+        type=str,
+        required=True,
+        choices=["aam", "rdkit", "mixed"],
+        help="The way of deciding which molecules in a reaction are reagents. "
+        "Possible choices: aam, rdkit. The first relies on atom mapping, "
+        "the second on a fingerprint-based technique from Schneider et al. 2016",
+    )
+    parser.add_argument(
+        "--fragment_grouping",
+        type=str,
+        default=None,
+        choices=["cxsmiles", "heuristic"],
+        help="How to do fragment grouping in reactions. Options: cxsmiles, heuristic. "
+        "If not provided, no reagent grouping will be used",
+    )
+    parser.add_argument(
+        "--canonicalization",
+        type=str,
+        default=None,
+        choices=["keep_aam", "remove_aam"],
+        help="Specifies the way of reaction canonicalization - with atom mapping or without it."
+        "Atom mapping might be necessary for some reaction encoders. "
+        "It is recommended to use 'remove_aam' together when --reagents=rdkit. "
+        "If not specified, reactions are not canonicalized.",
+    )
+    parser.add_argument(
+        "--n_jobs",
+        type=int,
+        default=cpu_count(),
+        help="Number of processes to use in parallelized functions.",
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Whether to show progress bar of reagent preprocessing.",
+    )
+    parser.add_argument(
+        "--min_reagent_occurrences",
+        type=int,
+        default=None,
+        help="If not None, all reagent with number of occurrences less than this "
+        "number will be removed.",
+    )
 
     main(parser.parse_args())

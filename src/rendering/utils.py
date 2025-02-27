@@ -1,11 +1,9 @@
-import io
 import base64
+import io
 
-import pandas as pd
 import numpy as np
-
+import pandas as pd
 from dash.html import Div
-
 from rdkit import Chem
 from rdkit.Chem import Draw
 from rdkit.Chem.Draw import rdDepictor
@@ -13,11 +11,13 @@ from rdkit.Chem.Draw import rdDepictor
 
 def add_numerical_labels_for_classes(df: pd.DataFrame) -> pd.DataFrame:
     if "class" in df.columns:
-        df["numerical_label"] = df["class"].map({v: i for i, v in enumerate(sorted(df["class"].unique()))})
+        df["numerical_label"] = df["class"].map(
+            {v: i for i, v in enumerate(sorted(df["class"].unique()))}
+        )
     else:
         df["numerical_label"] = 0
         df["class"] = "All molecules"
-        df["name"] = ''
+        df["name"] = ""
     return df
 
 
@@ -79,7 +79,7 @@ def smi2svg(smi: str) -> str:
     drawer = Draw.MolDraw2DSVG(400, 400)
     drawer.DrawMolecule(mc)
     drawer.FinishDrawing()
-    svg = drawer.GetDrawingText().replace('svg:', '')
+    svg = drawer.GetDrawingText().replace("svg:", "")
     return svg
 
 
