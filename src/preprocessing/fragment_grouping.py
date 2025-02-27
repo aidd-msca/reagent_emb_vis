@@ -4,7 +4,7 @@ from collections import Counter
 from rdkit import Chem
 from rdkit.Chem import MolFromSmiles
 
-from preprocessing.utils import check_subset, counter_to_list, smi_charge
+from src.preprocessing.utils import check_subset, counter_to_list, smi_charge
 
 SOLVENTS = {
     "CC#N": "acetonitrile",

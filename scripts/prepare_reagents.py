@@ -5,9 +5,9 @@ from pathlib import Path
 import pandas as pd
 from rdkit import RDLogger
 
-import preprocessing.utils as ut
-from preprocessing.reagent_detector import EnhancedReactionRoleAssignment
-from preprocessing.reagent_replacement import REAGENT_STANDARD_REPLACEMENT
+import src.preprocessing.utils as ut
+from src.preprocessing.reagent_detector import EnhancedReactionRoleAssignment
+from src.preprocessing.reagent_replacement import REAGENT_STANDARD_REPLACEMENT
 
 
 def is_long_reaction(rxn: str, separator: str = ";") -> bool:

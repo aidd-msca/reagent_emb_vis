@@ -4,9 +4,9 @@ from collections import defaultdict
 from rdkit import Chem
 from rdkit.Chem import rdMolHash
 
-from preprocessing.fragment_grouping import group_fragments
-from preprocessing.identifyReactants import extract_reactants
-from preprocessing.utils import canonicalize_reaction, canonicalize_reaction_remove_aam
+from src.preprocessing.fragment_grouping import group_fragments
+from src.preprocessing.identifyReactants import extract_reactants
+from src.preprocessing.utils import canonicalize_reaction, canonicalize_reaction_remove_aam
 
 
 def assign_reaction_roles_by_rdkit(smi: str) -> str:

@@ -2,7 +2,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-from rendering.utils import to_cartesian_coordinates, uniform_sphere_points
+from src.rendering.utils import to_cartesian_coordinates, uniform_sphere_points
 
 
 def update_flat_chart(df: pd.DataFrame):

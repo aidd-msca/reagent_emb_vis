@@ -9,8 +9,8 @@ from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 from rdkit import RDLogger
 
-import rendering.utils as ut
-from rendering.figures import update_class_selector, update_flat_chart, update_sphere_chart
+import src.rendering.utils as ut
+from src.rendering.figures import update_class_selector, update_flat_chart, update_sphere_chart
 
 external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)

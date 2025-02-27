@@ -1,19 +1,19 @@
 #
 #  Copyright (c) 2016, Novartis Institutes for BioMedical Research Inc.
 #  All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
-# met: 
+# met:
 #
-#     * Redistributions of source code must retain the above copyright 
+#     * Redistributions of source code must retain the above copyright
 #       notice, this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above
-#       copyright notice, this list of conditions and the following 
-#       disclaimer in the documentation and/or other materials provided 
+#       copyright notice, this list of conditions and the following
+#       disclaimer in the documentation and/or other materials provided
 #       with the distribution.
-#     * Neither the name of Novartis Institutes for BioMedical Research Inc. 
-#       nor the names of its contributors may be used to endorse or promote 
+#     * Neither the name of Novartis Institutes for BioMedical Research Inc.
+#       nor the names of its contributors may be used to endorse or promote
 #       products derived from this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -29,6 +29,14 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # Created by Nadine Schneider, July 2016
+
+# Keep this file unchanged, it's legacy code
+# ruff: noqa
+# fmt: off
+# type: ignore
+# mypy: ignore-errors
+# pylint: skip-file
+# flake8: noqa
 
 import copy
 
@@ -131,7 +139,7 @@ class MoleculeDetails(object):
         # all other atoms have at least a reactivity of one
         reactivity = 1
         b = a.GetBonds()
-        # if it is a heteroatom or has an H (we already know it's not SP3 or aromatic) increase the reactivity 
+        # if it is a heteroatom or has an H (we already know it's not SP3 or aromatic) increase the reactivity
         if self._isHeteroAtom(a) or a.GetTotalNumHs() > 0:
             reactivity += 1
         # slightly increase reactivity for atoms in aromatic rings compared to aliphatic rings
@@ -159,7 +167,7 @@ class MoleculeDetails(object):
                 # bonds between nitrogens and oxygen or between oxygen and oxygen or between nitrogen and nitrogen are more reactive
                 if a.GetAtomicNum() in (7, 8) and ni.GetAtomicNum() in (7, 8):
                     reactivity += 2
-                # if the neighbor is a Mg, Si, P, Pd, or Sn atom increase the reactivity 
+                # if the neighbor is a Mg, Si, P, Pd, or Sn atom increase the reactivity
                 elif ni.GetAtomicNum() in (12, 14, 15, 46, 50):
                     reactivity += 1
         return reactivity
@@ -271,7 +279,7 @@ def _getBestCombination(rfps, pfps, output=False):
     for i in pfps:
         productsDetailFPBitInfo.update(i.bitInfoDetailFP)
         productsScaffoldFPBitInfo.update(i.bitInfoScaffoldFP)
-    # set some initial values    
+    # set some initial values
     numUnmappedPAtoms, bitsUnmappedPAtoms = getNumPositiveBitCountsOfRadius0(productsScaffoldFP,
                                                                              productsScaffoldFPBitInfo)
     finalNumUnmappedProdAtoms = [[len(productsDetailFP.GetNonzeroElements()),
@@ -314,7 +322,7 @@ def _getBestCombination(rfps, pfps, output=False):
             del finalNumUnmappedProdAtoms[:]
             # set the final reactants
             finalReacts.append([i[1] for i in test])
-            # for tracking the mapping of the product atoms include the number of unmapped detailedFP bits, the number of unmapped 
+            # for tracking the mapping of the product atoms include the number of unmapped detailedFP bits, the number of unmapped
             # atoms based on the scaffold FP,  the number of unmapped scaffoldFP bits, and the unmapped scaffoldFP bits
             finalNumUnmappedProdAtoms.append(
                 [detailFPScore[1], scaffoldFPScore[2], scaffoldFPScore[1], scaffoldFPScore[-1]])

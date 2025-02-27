@@ -5,7 +5,11 @@ import pandas as pd
 from scipy.sparse.linalg import svds
 from umap import UMAP
 
-from preprocessing.utils import build_pmi_dict, get_reagent_statistics, pmi_dict_to_sparse_matrix
+from src.preprocessing.utils import (
+    build_pmi_dict,
+    get_reagent_statistics,
+    pmi_dict_to_sparse_matrix,
+)
 
 
 def umap_projection(embeddings: np.array) -> pd.DataFrame:
