@@ -10,10 +10,15 @@ from dash.exceptions import PreventUpdate
 from rdkit import RDLogger
 
 import src.rendering.utils as ut
-from src.rendering.figures import update_class_selector, update_flat_chart, update_sphere_chart
+from src.rendering.figures import (
+    update_class_selector,
+    update_flat_chart,
+    update_sphere_chart,
+)
 
 external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+server = app.server
 
 app.config.suppress_callback_exceptions = True
 
@@ -72,7 +77,11 @@ app.layout = html.Div(
             ]
         ),
         html.Div(
-            [html.Div([html.Div(id="molimg")]), html.Div(id="smiles"), html.Div(id="mol_name")],
+            [
+                html.Div([html.Div(id="molimg")]),
+                html.Div(id="smiles"),
+                html.Div(id="mol_name"),
+            ],
             style={
                 "width": "50%",
                 "display": "inline-block",
@@ -219,7 +228,11 @@ def update_graph(n_clicks, selected_class, slider_value, pattern_string, content
 
 
 @app.callback(
-    [Output("molimg", "children"), Output("smiles", "children"), Output("mol_name", "children")],
+    [
+        Output("molimg", "children"),
+        Output("smiles", "children"),
+        Output("mol_name", "children"),
+    ],
     [Input("graph", "hoverData")],
 )
 def update_img_from_flat_map(hoverData):
@@ -235,11 +248,4 @@ def update_img_from_flat_map(hoverData):
 
 if __name__ == "__main__":
     RDLogger.DisableLog("rdApp.*")
-
-    parser = ArgumentParser()
-    parser.add_argument("--host", type=str, default="127.0.0.1", help="IP address for the app.")
-    parser.add_argument("--port", type=int, default=8050, help="Port for the app.")
-    parser.add_argument("--debug", action="store_true", help="Flag for the debug mode.")
-    args = parser.parse_args()
-
-    app.run(host=args.host, port=args.port, debug=args.debug)
+    app.run_server(host="127.0.0.1", port=8050, debug=False)
