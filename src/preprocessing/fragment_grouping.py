@@ -4,7 +4,7 @@ from collections import Counter
 from rdkit import Chem
 from rdkit.Chem import MolFromSmiles
 
-from preprocessing.utils import check_subset, counter_to_list, smi_charge
+from src.preprocessing.utils import check_subset, counter_to_list, smi_charge
 
 SOLVENTS = {
     "CC#N": "acetonitrile",
@@ -53,35 +53,124 @@ SOLVENTS = {
     "COCCOC": "1,2-DME",
     "COC(C)(C)C": "Methyl tert-butyl ether",
     "CCOC(C)=O": "ethyl acetate",
-    "S=C=S": "carbon disulfide"
+    "S=C=S": "carbon disulfide",
 }
 
-SPECIAL_METALS = {"Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge",
-                  "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn", "Sb",
-                  "La", "Ce", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Th", "U"}
-SPECIAL_METALS = {MolFromSmiles(f'[{i}]').GetAtoms()[0].GetAtomicNum() for i in SPECIAL_METALS}
+SPECIAL_METALS = {
+    "Sc",
+    "Ti",
+    "V",
+    "Cr",
+    "Mn",
+    "Fe",
+    "Co",
+    "Ni",
+    "Cu",
+    "Zn",
+    "Ga",
+    "Ge",
+    "Y",
+    "Zr",
+    "Nb",
+    "Mo",
+    "Tc",
+    "Ru",
+    "Rh",
+    "Pd",
+    "Ag",
+    "Cd",
+    "In",
+    "Sn",
+    "Sb",
+    "La",
+    "Ce",
+    "Hf",
+    "Ta",
+    "W",
+    "Re",
+    "Os",
+    "Ir",
+    "Pt",
+    "Au",
+    "Hg",
+    "Tl",
+    "Pb",
+    "Bi",
+    "Th",
+    "U",
+}
+SPECIAL_METALS = {MolFromSmiles(f"[{i}]").GetAtoms()[0].GetAtomicNum() for i in SPECIAL_METALS}
 
 METALLOCENE_METALS = {"Ti", "Fe", "V", "Cr", "Mn", "Co", "Ni", "Y", "Zr", "Nb", "Mo"}
-METALLOCENE_METALS = {MolFromSmiles(f'[{i}]').GetAtoms()[0].GetAtomicNum() for i in METALLOCENE_METALS}
+METALLOCENE_METALS = {
+    MolFromSmiles(f"[{i}]").GetAtoms()[0].GetAtomicNum() for i in METALLOCENE_METALS
+}
 
 COMMON_CATALYSTS = [
     Counter(["[Ti+3]", "[Cl-]", "[Cl-]", "[Cl-]"]),
-    Counter(["Cl[Pd]Cl", "[Fe+2]", "c1ccc(P(c2ccccc2)[c-]2cccc2)cc1",
-             "c1ccc(P(c2ccccc2)[c-]2cccc2)cc1"]),  # (DPPF)PdCl2
-    Counter(["[Pd]", "c1ccc(P(c2ccccc2)c2ccccc2)cc1", "c1ccc(P(c2ccccc2)c2ccccc2)cc1", "c1ccc(P(c2ccccc2)c2ccccc2)cc1",
-             "c1ccc(P(c2ccccc2)c2ccccc2)cc1"]),  # Pd(PPh3)4
+    Counter(
+        ["Cl[Pd]Cl", "[Fe+2]", "c1ccc(P(c2ccccc2)[c-]2cccc2)cc1", "c1ccc(P(c2ccccc2)[c-]2cccc2)cc1"]
+    ),  # (DPPF)PdCl2
+    Counter(
+        [
+            "[Pd]",
+            "c1ccc(P(c2ccccc2)c2ccccc2)cc1",
+            "c1ccc(P(c2ccccc2)c2ccccc2)cc1",
+            "c1ccc(P(c2ccccc2)c2ccccc2)cc1",
+            "c1ccc(P(c2ccccc2)c2ccccc2)cc1",
+        ]
+    ),  # Pd(PPh3)4
     # Pd2(dba)3
-    Counter(["[Pd]", "[Pd]", "O=C(C=Cc1ccccc1)C=Cc1ccccc1", "O=C(C=Cc1ccccc1)C=Cc1ccccc1",
-             "O=C(C=Cc1ccccc1)C=Cc1ccccc1"]),
+    Counter(
+        [
+            "[Pd]",
+            "[Pd]",
+            "O=C(C=Cc1ccccc1)C=Cc1ccccc1",
+            "O=C(C=Cc1ccccc1)C=Cc1ccccc1",
+            "O=C(C=Cc1ccccc1)C=Cc1ccccc1",
+        ]
+    ),
     # Pd(dba)2
     Counter(["[Pd]", "O=C(C=Cc1ccccc1)C=Cc1ccccc1", "O=C(C=Cc1ccccc1)C=Cc1ccccc1"]),
-    Counter(["[Ru]", "[Ru]", "[Ru]", "[C-]#[O+]", "[C-]#[O+]", "[C-]#[O+]", "[C-]#[O+]", "[C-]#[O+]", "[C-]#[O+]",
-             "[C-]#[O+]", "[C-]#[O+]", "[C-]#[O+]", "[C-]#[O+]", "[C-]#[O+]", "[C-]#[O+]"]),  # Ru3(CO)12
-    Counter(["[K+]", "[K+]", "[K+]", "[Fe+3]", "[C-]#N", "[C-]#N", "[C-]#N", "[C-]#N", "[C-]#N", "[C-]#N"]),
+    Counter(
+        [
+            "[Ru]",
+            "[Ru]",
+            "[Ru]",
+            "[C-]#[O+]",
+            "[C-]#[O+]",
+            "[C-]#[O+]",
+            "[C-]#[O+]",
+            "[C-]#[O+]",
+            "[C-]#[O+]",
+            "[C-]#[O+]",
+            "[C-]#[O+]",
+            "[C-]#[O+]",
+            "[C-]#[O+]",
+            "[C-]#[O+]",
+            "[C-]#[O+]",
+        ]
+    ),  # Ru3(CO)12
+    Counter(
+        [
+            "[K+]",
+            "[K+]",
+            "[K+]",
+            "[Fe+3]",
+            "[C-]#N",
+            "[C-]#N",
+            "[C-]#N",
+            "[C-]#N",
+            "[C-]#N",
+            "[C-]#N",
+        ]
+    ),
     # K3[Fe(CN)6]
     Counter(["Cl[Ru]Cl", "Cl[Ru]Cl", "c1ccccc1", "c1ccccc1"]),
     Counter(["CN(C)[P+](On1nnc2ccccc21)(N(C)C)N(C)C", "F[P-](F)(F)(F)(F)F"]),
-    Counter(["[Na+]", "[K+]", "O=C([O-])[C@H](O)[C@@H](O)C(=O)[O-]"]),  # Potassium sodium L-(+)-tartrate
+    Counter(
+        ["[Na+]", "[K+]", "O=C([O-])[C@H](O)[C@@H](O)C(=O)[O-]"]
+    ),  # Potassium sodium L-(+)-tartrate
     Counter(["[Na+]", "[K+]", "O=C([O-])C(O)C(O)C(=O)[O-]"]),  # Potassium sodium tartrate
     Counter(["[Li+]", "[AlH4-]"]),
     Counter(["[Li+]", "[Al+3]", "[H-]", "[H-]", "[H-]", "[H-]"]),
@@ -110,6 +199,7 @@ def contains_metallocene_metal(smi: str) -> bool:
 # 4. Decrease the cation counter and the anion counter
 # 5. Repeat from 2 while both cation and anion counter are not empty
 
+
 class FailedToBalanceChargesError(Exception):
     """
     A custom error for ChargeBalancer.
@@ -117,6 +207,7 @@ class FailedToBalanceChargesError(Exception):
     This is usually the case when a partition would require a salt
     with several different cations or anions.
     """
+
     pass
 
 
@@ -164,24 +255,35 @@ class ChargeBalancer:
         result = []
         while self.cation_counter and self.anion_counter:
             # Balance the particle with the largest absolute charge
-            anion = min(self.anion_counter, key=lambda x: (self._total_neg_charge(x), smi_charge(x)))
-            cation = max(self.cation_counter, key=lambda x: (self._total_pos_charge(x), smi_charge(x)))
+            anion = min(
+                self.anion_counter, key=lambda x: (self._total_neg_charge(x), smi_charge(x))
+            )
+            cation = max(
+                self.cation_counter, key=lambda x: (self._total_pos_charge(x), smi_charge(x))
+            )
             anion_total_charge = -self._total_neg_charge(anion)
             cation_total_charge = self._total_pos_charge(cation)
-            if min(anion_total_charge, cation_total_charge) > 1 and anion_total_charge == cation_total_charge:
+            if (
+                min(anion_total_charge, cation_total_charge) > 1
+                and anion_total_charge == cation_total_charge
+            ):
                 balanced = self._balance(cation, anion)
                 result.append(".".join(balanced))
                 continue
 
             if anion_total_charge >= cation_total_charge or len(self.cation_counter) == 1:
-                chosen_cation = min(self.cation_counter,
-                                    key=lambda x: -self._total_neg_charge(anion) - self._total_pos_charge(x))
+                chosen_cation = min(
+                    self.cation_counter,
+                    key=lambda x: -self._total_neg_charge(anion) - self._total_pos_charge(x),
+                )
                 balanced = self._balance(chosen_cation, anion)
                 result.append(".".join(balanced))
 
             else:
-                chosen_anion = min(self.anion_counter,
-                                   key=lambda x: -self._total_neg_charge(x) - self._total_pos_charge(cation))
+                chosen_anion = min(
+                    self.anion_counter,
+                    key=lambda x: -self._total_neg_charge(x) - self._total_pos_charge(cation),
+                )
 
                 balanced = self._balance(cation, chosen_anion)
                 result.append(".".join(balanced))
@@ -189,7 +291,7 @@ class ChargeBalancer:
         return result
 
 
-def group_fragments(smi: str, separator: str = ';') -> str | None:
+def group_fragments(smi: str, separator: str = ";") -> str | None:
     """
     Organizes reagents in a clean way.
     First, extracts common hardcoded catalysts which consist of several species
@@ -226,12 +328,23 @@ def group_fragments(smi: str, separator: str = ';') -> str | None:
             solvents.append(solvent)
             species_counter.pop(solvent)
 
-    contains_metallocene = any([contains_metallocene_metal(k) and smi_charge(k) != 0 for k in species_counter]) and any(
-        [Chem.MolFromSmiles(k).HasSubstructMatch(Chem.MolFromSmiles("c1cc[cH-]c1")) for k in species_counter])
+    contains_metallocene = any(
+        [contains_metallocene_metal(k) and smi_charge(k) != 0 for k in species_counter]
+    ) and any(
+        [
+            Chem.MolFromSmiles(k).HasSubstructMatch(Chem.MolFromSmiles("c1cc[cH-]c1"))
+            for k in species_counter
+        ]
+    )
     if contains_metallocene:
-        metallocene_like_particles = [i for i in smi.split('.') if (
-                (contains_metallocene_metal(i) and smi_charge(i) != 0) or Chem.MolFromSmiles(i).HasSubstructMatch(
-            Chem.MolFromSmiles("c1cc[cH-]c1")))]
+        metallocene_like_particles = [
+            i
+            for i in smi.split(".")
+            if (
+                (contains_metallocene_metal(i) and smi_charge(i) != 0)
+                or Chem.MolFromSmiles(i).HasSubstructMatch(Chem.MolFromSmiles("c1cc[cH-]c1"))
+            )
+        ]
         try:
             single_species += ChargeBalancer(metallocene_like_particles).run()
         except FailedToBalanceChargesError:
@@ -241,7 +354,7 @@ def group_fragments(smi: str, separator: str = ';') -> str | None:
     # Dealing with charged species
 
     # if the SMILES string has balanced charges
-    if sum([smi_charge(i) for i in smi.split('.')]) == 0:
+    if sum([smi_charge(i) for i in smi.split(".")]) == 0:
         for k, v in species_counter.items():
             if Chem.GetFormalCharge(Chem.MolFromSmiles(k)) == 0:
                 uncharged_smi += [k] * v
@@ -257,7 +370,11 @@ def group_fragments(smi: str, separator: str = ';') -> str | None:
     # if charges are unbalanced
     else:
         species_counter = Counter(
-            {k: v for k, v in species_counter.items() if smi_charge(k) == 0 or contains_transition_metal(k)}
+            {
+                k: v
+                for k, v in species_counter.items()
+                if smi_charge(k) == 0 or contains_transition_metal(k)
+            }
         )
 
     # Dealing with uncharged species
@@ -275,6 +392,8 @@ def group_fragments(smi: str, separator: str = ';') -> str | None:
             species_counter[k] = 1
 
     species_left = counter_to_list(species_counter)
-    all_molecules = [".".join(species_left)] + complex_catalysts + single_species + salt_smi + solvents
+    all_molecules = (
+        [".".join(species_left)] + complex_catalysts + single_species + salt_smi + solvents
+    )
     all_molecules = [Chem.CanonSmiles(m, useChiral=False) for m in all_molecules]
     return separator.join(all_molecules).strip(separator)

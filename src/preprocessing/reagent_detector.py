@@ -4,9 +4,9 @@ from collections import defaultdict
 from rdkit import Chem
 from rdkit.Chem import rdMolHash
 
-from preprocessing.identifyReactants import extract_reactants
-from preprocessing.fragment_grouping import group_fragments
-from preprocessing.utils import canonicalize_reaction_remove_aam, canonicalize_reaction
+from src.preprocessing.fragment_grouping import group_fragments
+from src.preprocessing.identifyReactants import extract_reactants
+from src.preprocessing.utils import canonicalize_reaction, canonicalize_reaction_remove_aam
 
 
 def assign_reaction_roles_by_rdkit(smi: str) -> str:
@@ -57,11 +57,7 @@ def assign_reaction_roles_by_aam(smi: str) -> str:
         else:
             reagents.append(m)
 
-    return ">".join(
-        (".".join(reactants),
-         ".".join(reagents),
-         right)
-    )
+    return ">".join((".".join(reactants), ".".join(reagents), right))
 
 
 def assign_reaction_roles_mixed(smi: str) -> str:
@@ -85,7 +81,7 @@ def assign_reaction_roles_mixed(smi: str) -> str:
 
 
 def extract_fragment_cxsmiles(cxsmiles: str) -> str:
-    substring = cxsmiles[cxsmiles.index("f:"):]
+    substring = cxsmiles[cxsmiles.index("f:") :]
     for i, char in enumerate(substring):
         if char in ("^", "c"):
             return substring[:i]
@@ -94,14 +90,20 @@ def extract_fragment_cxsmiles(cxsmiles: str) -> str:
 
 def parse_frament_cxsmiles(fragment_cxsmiles: str) -> list[list[int]]:
     assert fragment_cxsmiles.startswith("f:")
-    return [[int(i) for i in group.split(".")] for group in fragment_cxsmiles.split("f:")[1].split(",") if group]
+    return [
+        [int(i) for i in group.split(".")]
+        for group in fragment_cxsmiles.split("f:")[1].split(",")
+        if group
+    ]
 
 
 def hash_mol(smi: str) -> str:
     return rdMolHash.MolHash(Chem.MolFromSmiles(smi), rdMolHash.HashFunction.CanonicalSmiles)
 
 
-def update_reported_fragment_grouping(rsmi_orig: str, rsmi_reassigned, grouping: list[list[int]]) -> list[list[int]]:
+def update_reported_fragment_grouping(
+    rsmi_orig: str, rsmi_reassigned, grouping: list[list[int]]
+) -> list[list[int]]:
     smi_sequence_orig: str = rsmi_orig.replace(">>", ".").replace(">", ".")
     smi_sequence_reassigned: str = rsmi_reassigned.replace(">>", ".").replace(">", ".")
     idx2hash_orig = {i: hash_mol(s) for i, s in enumerate(smi_sequence_orig.split("."))}
@@ -120,12 +122,12 @@ def update_reported_fragment_grouping(rsmi_orig: str, rsmi_reassigned, grouping:
 
 
 def adjust_reaction_roles_with_grouping(rsmi: str, grouping: list[list[int]]) -> str:
-    smi_sequence: list[str] = rsmi.replace(">>", ".").replace(">", ".").split('.')
+    smi_sequence: list[str] = rsmi.replace(">>", ".").replace(">", ".").split(".")
 
     left, center, right = rsmi.split(">")
-    left = left.split('.')
-    center = center.split('.')
-    right = right.split('.')
+    left = left.split(".")
+    center = center.split(".")
+    right = right.split(".")
     initial_sides = {}
     idx = 0
     for _ in left:
@@ -159,15 +161,22 @@ def adjust_reaction_roles_with_grouping(rsmi: str, grouping: list[list[int]]) ->
         if i not in processed_ids:
             final_sides[initial_sides[i]].append(smi_sequence[i])
 
-    return ".".join(final_sides["reactants"]) + ">" + ";".join(final_sides["reagents"]) + ">" + ".".join(
-        final_sides["products"])
+    return (
+        ".".join(final_sides["reactants"])
+        + ">"
+        + ";".join(final_sides["reagents"])
+        + ">"
+        + ".".join(final_sides["products"])
+    )
 
 
 class EnhancedReactionRoleAssignment:
-    def __init__(self,
-                 role_assignment_mode: str,
-                 canonicalization_mode: str | None = None,
-                 grouping_mode: str | None = None):
+    def __init__(
+        self,
+        role_assignment_mode: str,
+        canonicalization_mode: str | None = None,
+        grouping_mode: str | None = None,
+    ):
         self.role_assignment_mode = role_assignment_mode
         self.canonicalization_mode = canonicalization_mode
         self.grouping_mode = grouping_mode
@@ -226,12 +235,10 @@ class EnhancedReactionRoleAssignment:
         return self.canonicalize(rsmi_grouped)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     s = "[OH-:1].[Na+].[Na].[O-]S([O-])(=O)=O.[Na+].[Na+].S([O-])([O-])(=O)=O.[Na+].[Na+].[C:18]([O-:21])([O-])=O.[K+].[K+].CCN=C=N[CH2:29][CH2:30][CH2:31]N(C)C.Cl.Cl.CN(C)CCCN=C=NCC.[CH:62]1[CH:67]=CC2N(O)N=N[C:64]=2[CH:63]=1.ON1[C:63]2[CH:64]=CC=[CH:67][C:62]=2N=N1.CC1C=CC(S(O)(=O)=O)=CC=1.C1(C)C=CC(S(O)(=O)=O)=CC=1.C([O-])(O)=O.[Na+].[Na].[H-].[H-].[H-].[H-].[Li+].[Al+3].[H-].[Al+3].[Li+].[H-].[H-].[H-]>CN(C=O)C.CN(C)C=O.CO.CO.C(Cl)(Cl)Cl.C(Cl)(Cl)Cl.CCOCC.C(OCC)C.CCOC(C)=O.C(OCC)(=O)C.CCO.C(O)C.C(Cl)Cl.ClCCl>[CH2:29]1[CH2:18][O:21][CH2:31][CH2:30]1.[O:1]1[CH2:64][CH2:63][CH2:62][CH2:67]1 |f:0.1.2,3.4.5.6.7.8,9.10.11,12.13.14.15,16.17,18.19,20.21.22,23.24.25.26.27.28.29.30.31.32.33.34,35.36,37.38,39.40,41.42,43.44,45.46,47.48,49.50|"
     role_master = EnhancedReactionRoleAssignment(
-        role_assignment_mode="mixed",
-        canonicalization_mode="remove_aam",
-        grouping_mode="cxsmiles"
+        role_assignment_mode="mixed", canonicalization_mode="remove_aam", grouping_mode="cxsmiles"
     )
     r = role_master.run(s)
     print(r)

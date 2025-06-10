@@ -1,20 +1,17 @@
 import math
-from typing import Callable, Iterable
 from collections import Counter
 from functools import lru_cache, partial
 from itertools import combinations
 from multiprocessing import Pool, cpu_count
+from typing import Callable, Iterable
 
-from pandas import Series, concat
 import numpy as np
+from pandas import Series, concat
+from rdkit import Chem, RDLogger
+from scipy.sparse import csc_matrix
 from tqdm import tqdm
 
-from scipy.sparse import csc_matrix
-
-from rdkit import Chem
-from rdkit import RDLogger
-
-RDLogger.DisableLog('rdApp.*')
+RDLogger.DisableLog("rdApp.*")
 
 tqdm.pandas()
 
@@ -38,9 +35,9 @@ def canonicalize_reaction_remove_aam(smi: str) -> str:
     :return: Canonicalized SMILES with no atom mapping
     """
     left, center, right = smi.split(">")
-    left = [canonical_remove_aam_mol(i) for i in left.split('.')]
-    center = [canonical_remove_aam_mol(i, stereo=False) for i in center.split(';')]
-    right = [canonical_remove_aam_mol(i) for i in right.split('.')]
+    left = [canonical_remove_aam_mol(i) for i in left.split(".")]
+    center = [canonical_remove_aam_mol(i, stereo=False) for i in center.split(";")]
+    right = [canonical_remove_aam_mol(i) for i in right.split(".")]
     return ".".join(left) + ">" + ";".join(center) + ">" + ".".join(right)
 
 
@@ -51,13 +48,14 @@ def canonicalize_reaction(smi: str) -> str:
     :return:
     """
     left, center, right = smi.split(">")
-    left = [Chem.CanonSmiles(i) for i in left.split('.')]
-    center = [Chem.CanonSmiles(i, useChiral=False) for i in center.split(';')]
-    right = [Chem.CanonSmiles(i) for i in right.split('.')]
+    left = [Chem.CanonSmiles(i) for i in left.split(".")]
+    center = [Chem.CanonSmiles(i, useChiral=False) for i in center.split(";")]
+    right = [Chem.CanonSmiles(i) for i in right.split(".")]
     return ".".join(left) + ">" + ";".join(center) + ">" + ".".join(right)
 
 
 # === Chemical curation
+
 
 @lru_cache(maxsize=None)
 def smi_charge(smi: str) -> int:
@@ -94,7 +92,9 @@ def __smi_mol_counter(separator: str, smi_col: Series):
     return smi_col.apply(lambda s: Counter(s.split(separator))).sum()
 
 
-def get_reagent_statistics(smi_col: Series, separator: str = ";", chunk_size: int = 1000) -> Counter:
+def get_reagent_statistics(
+    smi_col: Series, separator: str = ";", chunk_size: int = 1000
+) -> Counter:
     """
     Obtain frequency of the molecular occurrence among the reactants/reagents of all reactions
     in the form of a Counter. Uses process pool for faster processing.
@@ -107,7 +107,9 @@ def get_reagent_statistics(smi_col: Series, separator: str = ";", chunk_size: in
     f = partial(__smi_mol_counter, separator)
 
     with Pool(cpu_count()) as p:
-        bigger_counters = p.map(f, [smi_col[i: i + chunk_size] for i in range(0, n_entries, chunk_size)])
+        bigger_counters = p.map(
+            f, [smi_col[i : i + chunk_size] for i in range(0, n_entries, chunk_size)]
+        )
 
     return np.sum(bigger_counters)
 
@@ -132,12 +134,14 @@ def build_pmi_dict(data: Iterable[list[str]]) -> dict[tuple[str, str], float]:
     pair_pmi_scores = {}
     for (x, y), n in count_pair.items():
         pair_pmi_scores[(x, y)] = math.log2(
-            (n / sum_pair) / (count_single[x] / sum_single) / (count_single[y] / sum_single))
+            (n / sum_pair) / (count_single[x] / sum_single) / (count_single[y] / sum_single)
+        )
     return pair_pmi_scores
 
 
-def pmi_dict_to_sparse_matrix(smiles_pair_pmi_scores: dict[tuple[str, str], float],
-                              reagent_to_index: dict[str, int]) -> csc_matrix:
+def pmi_dict_to_sparse_matrix(
+    smiles_pair_pmi_scores: dict[tuple[str, str], float], reagent_to_index: dict[str, int]
+) -> csc_matrix:
     """
     Builds a sparse matrix with PMI scores (point-wise mutual information)
     between reagents.
@@ -157,6 +161,7 @@ def pmi_dict_to_sparse_matrix(smiles_pair_pmi_scores: dict[tuple[str, str], floa
 
 
 # === Tools for faster data processing on CPU using pool of processes ===
+
 
 def __parallelize(d: Series, func: Callable, num_of_processes: int) -> Series:
     data_split = np.array_split(d, num_of_processes)
